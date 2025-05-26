@@ -1,0 +1,12 @@
+# Network: polkadot or kusama
+network=kusama
+
+# Comma-separated validator stash addresses
+validators=STASH1,STASH2
+
+# How many past eras to check
+num_eras=4
+
+# Telegram bot settings - if no need then write None for both parameters
+bot_token=bot-token-here
+chat_id=chatID-here
