@@ -6,7 +6,7 @@ pip3 install substrate-interface requests
 # download autPayment folder
 git clone https://github.com/legendnodes/autoPayment.git
 
-# update service files
+# update service files  
 cd autoPayment
 
 # modify description file
