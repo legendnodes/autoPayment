@@ -23,4 +23,9 @@ chmod +x run_payout.sh
 
 # use crontab for auto running - in this exmple, run it at 16:00 UTC every day
 crontab -e
-00 16 * * * /full/path/to/your/project/run_payout.sh
+# polkadot - 1 payment a day
+00 16 * * * /full/path/to/autoPayment/run_payout.sh
+
+# kusama - 4 payments a day
+# 45 0,6,12,18 * * * /full/path/to/autoPayment/run_payout.sh 
+
