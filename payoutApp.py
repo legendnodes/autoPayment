@@ -18,7 +18,6 @@ logging.basicConfig(
 def log(msg, level='info'):
     getattr(logging, level)(msg)
 
-
 # === TELEGRAM ===
 def send_telegram(msg, config):
     bot_token = config.get('bot_token')
@@ -33,6 +32,15 @@ def send_telegram(msg, config):
     except Exception as e:
         log(f"Failed to send Telegram message: {e}", 'error')
 
+def should_notify(mode, is_success):
+    if mode == 'all':
+        return True
+    elif mode == 'success' and is_success:
+        return True
+    elif mode == 'failed' and not is_success:
+        return True
+    return False
+
 # === CONFIG LOADING ===
 def load_description():
     config = {}
@@ -46,6 +54,7 @@ def load_description():
     config['num_eras'] = int(config.get('num_eras', 4))
     config.setdefault('bot_token', 'none')
     config.setdefault('chat_id', 'none')
+    config['notification_mode'] = config.get('notification_mode', 'all').lower()
     return config
 
 def load_seed(network):
@@ -84,10 +93,10 @@ def payout_era(substrate, keypair, validator_stash, era):
 def short_address(address):
     return f"*{address[:6]}...{address[-5:]}*"
 
+# === VALIDATOR LOGIC ===
 def process_validator(substrate, keypair, stash, num_eras, config):
     current_era = get_current_era(substrate)
     all_claimed_eras = []
-    payout_messages = []
 
     identity = short_address(stash)
 
@@ -100,22 +109,25 @@ def process_validator(substrate, keypair, stash, num_eras, config):
                 sender_short = short_address(keypair.ss58_address)
                 sender_url = f"https://{config['network']}.subscan.io/account/{keypair.ss58_address}"
                 sender_line = f"*Sender:* [{sender_short}]({sender_url})"
-                payout_messages.append(f"{era_msg}\n\n{sender_line}")
+                full_msg = f"{era_msg}\n\n{sender_line}"
+                log(full_msg)
+                if should_notify(config['notification_mode'], is_success=True):
+                    send_telegram(full_msg, config)
                 time.sleep(6)
             except Exception as e:
                 err_msg = f"⚠️ *Payout FAILED* for {identity} in era {era}: {e}"
                 log(err_msg, 'error')
-                payout_messages.append(err_msg)
+                if should_notify(config['notification_mode'], is_success=False):
+                    send_telegram(err_msg, config)
         else:
             all_claimed_eras.append(era)
 
-    final_messages = []
     if all_claimed_eras:
         era_range = f"{all_claimed_eras[0]}–{all_claimed_eras[-1]}" if len(all_claimed_eras) > 1 else str(all_claimed_eras[0])
-        final_messages.append(f"✅ *era {era_range}* - All rewards already claimed for {identity}")
-
-    final_messages.extend(payout_messages)
-    send_telegram("\n\n".join(final_messages), config)
+        msg = f"✅ *era {era_range}* - All rewards already claimed for {identity}"
+        log(msg)
+        if should_notify(config['notification_mode'], is_success=True):
+            send_telegram(msg, config)
 
 # === MAIN ===
 def main():

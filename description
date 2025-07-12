@@ -10,3 +10,6 @@ num_eras=4
 # Telegram bot settings - if no need then write None for both parameters
 bot_token=bot-token-here
 chat_id=chatID-here
+
+# Choose notification preference - all,success,failed,none
+notification_mode=failed
