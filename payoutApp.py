@@ -66,7 +66,7 @@ def load_seed(network):
 
 # === BLOCKCHAIN FUNCTIONS ===
 def connect(network):
-    url = "wss://rpc.polkadot.io" if network == 'polkadot' else "wss://kusama-rpc.polkadot.io"
+    url = "wss://rpc.polkadot.io" if network == 'polkadot' else "wss://kusama-asset-hub-rpc.polkadot.io"
     return SubstrateInterface(url=url, type_registry_preset=network)
 
 def get_current_era(substrate):
