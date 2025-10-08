@@ -1,3 +1,4 @@
+```python
 import os
 import sys
 import time
@@ -106,8 +107,16 @@ def process_validator(substrate, keypair, stash, num_eras, config):
             try:
                 receipt = payout_era(substrate, keypair, stash, era)
                 era_msg = f"✅ *era {era}* - Payout successfully executed for {identity}"
+
+                # === UPDATED SUBSCAN URL LOGIC ===
+                if config['network'].lower() == 'kusama':
+                    sender_url = f"https://assethub-kusama.subscan.io/account/{keypair.ss58_address}"
+                elif config['network'].lower() == 'polkadot':
+                    sender_url = f"https://polkadot.subscan.io/account/{keypair.ss58_address}"
+                else:
+                    sender_url = f"https://{config['network']}.subscan.io/account/{keypair.ss58_address}"
+
                 sender_short = short_address(keypair.ss58_address)
-                sender_url = f"https://{config['network']}.subscan.io/account/{keypair.ss58_address}"
                 sender_line = f"*Sender:* [{sender_short}]({sender_url})"
                 full_msg = f"{era_msg}\n\n{sender_line}"
                 log(full_msg)
@@ -143,3 +152,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+```
