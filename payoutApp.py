@@ -111,7 +111,7 @@ def process_validator(substrate, keypair, stash, num_eras, config):
                 if config['network'].lower() == 'kusama':
                     sender_url = f"https://assethub-kusama.subscan.io/account/{keypair.ss58_address}"
                 elif config['network'].lower() == 'polkadot':
-                    sender_url = f"https://polkadot.subscan.io/account/{keypair.ss58_address}"
+                    sender_url = f"https://assethub-polkadot.subscan.io/account/{keypair.ss58_address}"
                 else:
                     sender_url = f"https://{config['network']}.subscan.io/account/{keypair.ss58_address}"
 
