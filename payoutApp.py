@@ -103,30 +103,54 @@ def process_validator(substrate, keypair, stash, num_eras, config):
     for era in range(current_era - num_eras, current_era):
         unclaimed = check_unclaimed_rewards(substrate, stash, era)
         if unclaimed:
-            try:
-                receipt = payout_era(substrate, keypair, stash, era)
-                era_msg = f"✅ *era {era}* - Payout successfully executed for {identity}"
 
-                # === UPDATED SUBSCAN URL LOGIC ===
-                if config['network'].lower() == 'kusama':
-                    sender_url = f"https://assethub-kusama.subscan.io/account/{keypair.ss58_address}"
-                elif config['network'].lower() == 'polkadot':
-                    sender_url = f"https://assethub-polkadot.subscan.io/account/{keypair.ss58_address}"
-                else:
-                    sender_url = f"https://{config['network']}.subscan.io/account/{keypair.ss58_address}"
+            max_attempts = 3
+            attempt = 1
+            success = False
 
-                sender_short = short_address(keypair.ss58_address)
-                sender_line = f"*Sender:* [{sender_short}]({sender_url})"
-                full_msg = f"{era_msg}\n\n{sender_line}"
-                log(full_msg)
-                if should_notify(config['notification_mode'], is_success=True):
-                    send_telegram(full_msg, config)
-                time.sleep(6)
-            except Exception as e:
-                err_msg = f"⚠️ *Payout FAILED* for {identity} in era {era}: {e}"
-                log(err_msg, 'error')
-                if should_notify(config['notification_mode'], is_success=False):
-                    send_telegram(err_msg, config)
+            while attempt <= max_attempts and not success:
+                try:
+                    log(f"🚀 Attempt {attempt}/{max_attempts} payout for {identity} era {era}")
+
+                    receipt = payout_era(substrate, keypair, stash, era)
+
+                    era_msg = f"✅ *era {era}* - Payout successfully executed for {identity}"
+
+                    # === SUBSCAN URL LOGIC ===
+                    if config['network'].lower() == 'kusama':
+                        sender_url = f"https://assethub-kusama.subscan.io/account/{keypair.ss58_address}"
+                    elif config['network'].lower() == 'polkadot':
+                        sender_url = f"https://assethub-polkadot.subscan.io/account/{keypair.ss58_address}"
+                    else:
+                        sender_url = f"https://{config['network']}.subscan.io/account/{keypair.ss58_address}"
+
+                    sender_short = short_address(keypair.ss58_address)
+                    sender_line = f"*Sender:* [{sender_short}]({sender_url})"
+                    full_msg = f"{era_msg}\n\n{sender_line}"
+
+                    log(full_msg)
+
+                    if should_notify(config['notification_mode'], is_success=True):
+                        send_telegram(full_msg, config)
+
+                    success = True
+                    time.sleep(6)
+
+                except Exception as e:
+                    log(f"⚠️ Attempt {attempt} FAILED for {identity} era {era}: {e}", 'error')
+
+                    if attempt < max_attempts:
+                        log("⏳ Waiting 30 seconds before retry...")
+                        time.sleep(30)
+                    else:
+                        err_msg = f"❌ *Payout FAILED after 3 attempts* for {identity} in era {era}: {e}"
+                        log(err_msg, 'error')
+
+                        if should_notify(config['notification_mode'], is_success=False):
+                            send_telegram(err_msg, config)
+
+                    attempt += 1
+
         else:
             all_claimed_eras.append(era)
 
